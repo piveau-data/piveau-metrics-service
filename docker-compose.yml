@@ -1,0 +1,13 @@
+version: '2'
+services:
+    mqa-metrics:
+        image: registry.gitlab.com/european-data-portal/mqa-metric-service
+        build: .
+        ports:
+            - '8083:8083'
+        depends_on:
+            - mongo
+    mongo:
+        image: mongo
+        ports:
+            - '27017:27017'

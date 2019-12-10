@@ -1,0 +1,940 @@
+# Note: An invalid OpenAPI 3 yaml file will cause the following exception at startup:
+# io.vertx.ext.web.api.contract.RouterFactoryException: Wrong specification url/path: webroot/openapi.yaml
+
+openapi: 3.0.0
+
+info:
+  version: 0.0.1-alpha
+  title: MQA Metric Service
+  x-logo:
+    url: "./edplogo.png"
+
+servers:
+  - url: 'http://localhost:8123'
+    description: Local development server
+  - url: 'http://mqa-metric-service.osapps.fokus.fraunhofer.de'
+    description: Staging server at FOKUS
+
+paths:
+
+  # ------------
+  # Admin actions
+  # ------------
+
+  /admin/refresh:
+    post:
+      description: Refresh global and catalogue metrics
+      summary: Calculates a new set of metrics based on the values currently stored in the database
+      operationId: refreshMetrics
+      security:
+        - ApiKeyAuth: []
+      responses:
+        202:
+          description: Request accepted
+        500:
+          description: Internal server error
+
+  # ------------
+  # Catalogue info
+  # ------------
+
+  /info/catalogues:
+    get:
+      description: Catalogue list
+      summary: Returns a list of all catalogues with their relevant metadata currently stored in the MQA
+      operationId: infoCatalogues
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Catalogues'
+        500:
+          description: Internal server error
+
+  /info/catalogues/{catalogueId}/accessibility:
+    get:
+      description: List of datasets with non-accessible distributions
+      summary: Returns a list of all datasets along with their distributions that are not accessible for a given catalogue
+      operationId: infoCatalogueAccessibility
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Result list size limit
+          required: false
+          schema:
+            type: number
+            format: int32
+        - name: offset
+          in: query
+          description: Result list offset
+          required: false
+          schema:
+            type: number
+            format: int32
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogueAccessibility'
+        404:
+          description: Catalogue doesn't have non-accessible datasets
+        500:
+          description: Internal server error
+
+  /info/catalogues/{catalogueId}/accessibility/size:
+    get:
+      description: Number of datasets with non-accessible distributions
+      summary: Returns the number of all datasets along with their distributions that are not accessible for a given catalogue
+      operationId: infoCatalogueAccessibilitySize
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Count'
+        500:
+          description: Internal server error
+
+  /info/catalogues/{catalogueId}/compliance:
+    get:
+      description: List of non-compliant datasets
+      summary: Returns a list of all datasets for a given catalogue that are not DCAT-AP conformant
+      operationId: infoCatalogueCompliance
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Result list size limit
+          required: false
+          schema:
+            type: number
+            format: int32
+        - name: offset
+          in: query
+          description: Result list offset
+          required: false
+          schema:
+            type: number
+            format: int32
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogueCompliance'
+        404:
+          description: Catalogue doesn't have non-compliant datasets
+        500:
+          description: Internal server error
+
+  /info/catalogues/{catalogueId}/compliance/size:
+    get:
+      description: Number of non-compliant datasets
+      summary: Returns the number of all datasets for a given catalogue that are not DCAT-AP conformant
+      operationId: infoCatalogueComplianceSize
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Count'
+        500:
+          description: Internal server error
+
+
+  # ------------
+  # Render sections
+  # ------------
+
+  /metric/global/render/distributions:
+    get:
+      description: Render global distribution section
+      summary: Returns boolean denoting if the MQA distribution section is relevant to render
+      operationId: globalRenderDistributions
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Render'
+        500:
+          description: Internal server error
+
+  /metric/global/render/violations:
+    get:
+      description: Render global violations section
+      summary: Returns boolean denoting if the MQA violations section is relevant to render
+      operationId: globalRenderViolations
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Render'
+        500:
+          description: Internal server error
+
+  /metric/global/render/licences:
+    get:
+      description: Render global licences section
+      summary: Returns boolean denoting if the MQA licences section is relevant to render
+      operationId: globalRenderLicences
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Render'
+        500:
+          description: Internal server error
+
+  # ------------
+  # Global distribution metrics
+  # ------------
+
+  /metric/global/distributions/accessibility/access_url:
+    get:
+      description: Global distribution access URL accessibility metrics
+      summary: Returns yes/no/unknown percentage of globally accessible distributions with regard to their access URL
+      operationId: globalDistributionAccessibilityAccessUrl
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamedPercentages'
+        500:
+          description: Internal server error
+
+  /metric/global/distributions/accessibility/download_url:
+    get:
+      description: Global distribution download URL accessibility metrics
+      summary: Returns yes/no/unknown percentage of globally accessible distributions with regard to their download URL
+      operationId: globalDistributionAccessibilityDownloadUrl
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamedPercentages'
+        500:
+          description: Internal server error
+
+  /metric/global/distributions/status_codes:
+    get:
+      description: Global distribution status codes
+      summary: Returns status codes with their respective percentages
+      operationId: globalDistributionStatusCodes
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamedPercentages'
+        500:
+          description: Internal server error
+
+  /metric/global/distributions/download_url_exists:
+    get:
+      description: Global distributions with a download URL
+      summary: Returns yes/no percentage of distributions with a download URL
+      operationId: globalDistributionDownloadUrlExists
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Percentages'
+        500:
+          description: Internal server error
+
+  /metric/global/datasets/machine_readable:
+    get:
+      description: Global dataset machine readability metrics
+      summary: Returns yes/no percentage of globally machine readable datasets
+      operationId: globalDatasetMachineReadability
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Percentages'
+        500:
+          description: Internal server error
+
+  /metric/global/distributions/formats:
+    get:
+      description: Global distribution formats
+      summary: Returns global distribution format names with their respective percentages
+      operationId: globalDistributionFormats
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamedPercentages'
+        500:
+          description: Internal server error
+
+  # ------------
+  # Global violations metrics
+  # ------------
+
+  /metric/global/datasets/violations:
+    get:
+      description: Global dataset DCAT-AP violation metrics
+      summary: Returns violation names with their relative percentages
+      operationId: globalDatasetViolation
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamedPercentages'
+        500:
+          description: Internal server error
+
+  /metric/global/datasets/compliance:
+    get:
+      description: Global dataset DCAT-AP compliance metrics
+      summary: Returns yes/no percentages of globally compliant datasets
+      operationId: globalDatasetCompliance
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Percentages'
+        500:
+          description: Internal server error
+
+  # ------------
+  # Global licence metrics
+  # ------------
+
+  /metric/global/datasets/licences:
+    get:
+      description: Global dataset licence usage metrics
+      summary: Returns licence names with their relative percentages
+      operationId: globalDatasetLicences
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamedPercentages'
+        500:
+          description: Internal server error
+
+  /metric/global/datasets/known_licences:
+    get:
+      description: Global dataset known licence metrics
+      summary: Returns yes/no percentages of global datasets with known licences
+      operationId: globalDatasetKnownLicences
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Percentages'
+        500:
+          description: Internal server error
+
+  # ------------
+  # Catalogue render sections
+  # ------------
+
+  /metric/catalogues/{catalogueId}/render/distributions:
+    get:
+      description: Render catalogue distribution section
+      summary: Returns boolean denoting if the MQA distribution section is relevant to render for the given catalogue
+      operationId: catalogueRenderDistributions
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Render'
+        500:
+          description: Internal server error
+
+  /metric/catalogues/{catalogueId}/render/violations:
+    get:
+      description: Render catalogue violations section
+      summary: Returns boolean denoting if the MQA violations section is relevant to render for the given catalogue
+      operationId: catalogueRenderViolations
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Render'
+        500:
+          description: Internal server error
+
+  /metric/catalogues/{catalogueId}/render/licences:
+    get:
+      description: Render catalogue licences section
+      summary: Returns boolean denoting if the MQA licences section is relevant to render for the given catalogue
+      operationId: catalogueRenderLicences
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Render'
+        500:
+          description: Internal server error
+
+
+  # ------------
+  # Catalogue distribution metrics
+  # ------------
+
+  /metric/catalogues/{catalogueId}/distributions/accessibility/access_url:
+    get:
+      description: Catalogue distribution access URL accessibility metrics
+      summary: Returns yes/no/unknown percentage of accessible distributions for given catalogue with regard to their access URL
+      operationId: catalogueDistributionAccessibilityAccessUrl
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Percentages'
+        500:
+          description: Internal server error
+
+  /metric/catalogues/{catalogueId}/distributions/accessibility/download_url:
+    get:
+      description: Catalogue distribution download URL accessibility metrics
+      summary: Returns yes/no/unknown percentage of accessible distributions for given catalogue with regard to their download URL
+                If the catalogue does not feature download URLs, requesting this info will yield "success":false
+      operationId: catalogueDistributionAccessibilityDownloadUrl
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Percentages'
+        500:
+          description: Internal server error
+
+  /metric/catalogues/{catalogueId}/distributions/status_codes:
+    get:
+      description: Catalogue distribution status codes
+      summary: Returns status codes with their respective percentages
+      operationId: catalogueDistributionStatusCodes
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamedPercentages'
+        500:
+          description: Internal server error
+
+  /metric/catalogues/{catalogueId}/distributions/download_url_exists:
+    get:
+      description: Catalogue distributions with a download URL
+      summary: Returns yes/no percentage of distributions with a download URL
+      operationId: catalogueDistributionDownloadUrlExists
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Percentages'
+        500:
+          description: Internal server error
+
+  /metric/catalogues/{catalogueId}/distributions/machine_readable:
+    get:
+      description: Catalogue distribution machine readability metrics
+      summary: Returns yes/no percentage of machine readable distributions for a given catalogue
+      operationId: catalogueDistributionMachineReadability
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Percentages'
+        500:
+          description: Internal server error
+
+  /metric/catalogues/{catalogueId}/distributions/formats:
+    get:
+      description: Catalogue distribution formats
+      summary: Returns distribution format names with their respective percentages for a given catalogue
+      operationId: catalogueDistributionFormats
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamedPercentages'
+        500:
+          description: Internal server error
+
+  /metric/catalogues/{catalogueId}/datasets/notaccessible_count:
+    get:
+      description: Datasets not accessible
+      summary: Returns number of datasets with distribution status codes >= 400
+      operationId: catalogueDatasetNotAccessibleCount
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Count'
+        500:
+          description: Internal server error
+
+  # ------------
+  # Catalogue violation metrics
+  # ------------
+
+  /metric/catalogues/{catalogueId}/datasets/violations:
+    get:
+      description: Catalogue dataset DCAT-AP violation metrics
+      summary: Returns violation names with their relative percentages
+      operationId: catalogueDatasetViolation
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamedPercentages'
+        500:
+          description: Internal server error
+
+  /metric/catalogues/{catalogueId}/datasets/compliance:
+    get:
+      description: Catalogue dataset DCAT-AP compliance metrics
+      summary: Returns yes/no percentages of globally compliant datasets
+      operationId: catalogueDatasetCompliance
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Percentages'
+        500:
+          description: Internal server error
+
+  /metric/catalogues/{catalogueId}/datasets/nonconformant_count:
+    get:
+      description: Datasets not conformant
+      summary: Returns number of datasets with at least one violation
+      operationId: catalogueDatasetNonConformantCount
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Count'
+        500:
+          description: Internal server error
+
+  # ------------
+  # Catalogue licence metrics
+  # ------------
+
+  /metric/catalogues/{catalogueId}/datasets/licences:
+    get:
+      description: Catalogue dataset licence usage metrics
+      summary: Returns licence names with their relative percentages
+      operationId: catalogueDatasetLicences
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamedPercentages'
+        500:
+          description: Internal server error
+
+  /metric/catalogues/{catalogueId}/datasets/known_licences:
+    get:
+      description: Catalogue dataset known licence metrics
+      summary: Returns yes/no percentages of datasets with known licences for a given catalogue
+      operationId: catalogueDatasetKnownLicences
+      parameters:
+        - name: catalogueId
+          in: path
+          description: ID of catalogue
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Percentages'
+        500:
+          description: Internal server error
+
+
+components:
+
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+
+  schemas:
+    Render:
+      description: Metrics containing a single boolean
+      type: object
+      properties:
+        success:
+          description: Denotes if the operation was successful
+          type: boolean
+        result:
+          description: The actual result
+          type: boolean
+
+    Percentages:
+      description: Metrics containing multiple percentages, denoted by dynamic keys
+      type: object
+      properties:
+        success:
+          description: Denotes if the operation was successful
+          type: boolean
+        result:
+          description: The actual result
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+
+    NamedPercentages:
+      description: Metrics containing arbitrary names with a fixed key along with their relative percentages
+      type: object
+      properties:
+        success:
+          description: Denotes if the operation was successful
+          type: boolean
+        result:
+          description: The actual result
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                description: The name
+                type: string
+              percentage:
+                description: The relative percentage
+                type: number
+                format: double
+
+    Catalogues:
+      description: Metadata about catalogues
+      type: object
+      properties:
+        success:
+          description: Denotes if the operation was successful
+          type: boolean
+        result:
+          description: The actual result
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                description: The catalogues unique ID, required for requesting catalogue specific metrics
+                type: string
+              name:
+                description: The catalogues unique name
+                type: string
+              title:
+                description: The catalogues title
+                type: string
+              description:
+                description: The catalogues description
+                type: string
+              spatial:
+                description: The catalogues spatial info
+                type: string
+              rating:
+                description: Metadata quality rating on a scale of zero to one
+                type: number
+                format: double
+              accessibility_access_url:
+                description: Catalogue distribution access URL accessibility metrics. For details see respective catalogue metric endpoint
+                type: object
+                $ref: '#/components/schemas/Percentages'
+              accessibility_download_url:
+                description: Catalogue distribution download URL accessibility metrics. For details see respective catalogue metric endpoint
+                type: object
+                $ref: '#/components/schemas/Percentages'
+              machine_readable:
+                description: Catalogue distribution machine readability metrics. For details see respective catalogue metric endpoint
+                type: object
+                $ref: '#/components/schemas/Percentages'
+              compliance:
+                description: Catalogue dataset DCAT-AP compliance metrics. For details see respective catalogue metric endpoint
+                type: object
+                $ref: '#/components/schemas/Percentages'
+              known_licences:
+                description: Catalogue dataset known licence metrics. For details see respective catalogue metric endpoint
+                type: object
+                $ref: '#/components/schemas/Percentages'
+
+    Count:
+      description: Simple numeric value
+      type: object
+      properties:
+        success:
+          description: Denotes if the operation was successful
+          type: boolean
+        result:
+          description: The actual result
+          type: number
+          format: integer
+
+    CatalogueAccessibility:
+      description: List of datasets with non-accessible distributions
+      type: object
+      properties:
+        success:
+          description: Denotes if the operation was successful
+          type: boolean
+        result:
+          description: The actual result
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                description: The dataset ID
+                type: string
+              name:
+                description: The dataset name
+                type: string
+              distributions:
+                description: The non-accessible distributions
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      description: Distribution ID
+                      type: string
+                    format:
+                      description: The distribution's format
+                      type: string
+                    metaDataMediaType:
+                      description: The distribution's media type, as stated in its metadata
+                      type: string
+                    checkedMediaType:
+                      description: The distribution's media type, as determined by a custom check
+                      type: string
+                    accessUrl:
+                      description: The distribution's access URL
+                      type: string
+                    statusAccessUrl:
+                      description: The access URL's HTTP status code
+                      type: number
+                      format: int32
+                    downloadUrl:
+                      description: The distribution's download URL
+                      type: string
+                    statusDownloadUrl:
+                      description: The download URL's HTTP status code
+                      type: number
+                      format: int32
+
+    CatalogueCompliance:
+      description: List of non-compliant datasets
+      type: object
+      properties:
+        success:
+          description: Denotes if the operation was successful
+          type: boolean
+        result:
+          description: The actual result
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                description: The dataset ID
+                type: string
+              name:
+                description: The dataset name
+                type: string
+              violations:
+                description: List of violations for the dataset
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      description: The violations name, as labeled in compliance metric
+                      type: string
+                    message:
+                      description: A more descriptive text explaining the violation
+                      type: string
